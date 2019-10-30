@@ -25,16 +25,48 @@ JOIN order_details as od ON o.order_id = od.order_id
 JOIN products as p ON p.product_id = od.product_id
 GROUP BY o.order_id;
 
+
+
+WITH order_total AS (
+SELECT 
+p.product_id, o.order_id, p.unit_price, od.quantity, p.unit_price * od.quantity AS order_total
+FROM 
+orders as o
+JOIN 
+order_details as od 
+ON o.order_id = od.order_id
+JOIN products as p 
+ON p.product_id = od.product_id
+LIMIT 50)
+
+SELECT  order_total.order_id, SUM(order_total.order_total) AS total
+FROM
+order_total 
+GROUP BY 
+order_total.order_id;
+
 -- 3) Use the above query as a CTE, and use AVG, stddev_samp, and COUNT, to get the mean, standard deviation
 -- of the orders, and how many orders there are total.
-WITH order_totals as (
-SELECT SUM(p.unit_price*od.quantity) as total
-FROM orders as o
-JOIN order_details as od ON o.order_id = od.order_id
-JOIN products as p ON p.product_id = od.product_id
-GROUP BY o.order_id)
-SELECT AVG(total), stddev_samp(total), COUNT(total)
-FROM order_totals;
+WITH order_total AS (
+SELECT 
+p.product_id, o.order_id, p.unit_price, od.quantity, p.unit_price * od.quantity AS order_total
+FROM 
+orders as o
+JOIN 
+order_details as od 
+ON o.order_id = od.order_id
+JOIN products as p 
+ON p.product_id = od.product_id),
+
+total_per_order AS(
+
+SELECT order_total.order_id, SUM(order_total.order_total) AS total
+FROM
+order_total 
+GROUP BY 
+order_total.order_id)
+SELECT AVG(total_per_order.total), stddev_samp(total_per_order.total), COUNT(total_per_order.total)
+FROM total_per_order;
 
 -- 4) The CEO of your company announced the other week that the company's long run average sales per order is 
 -- $1850! Do you believe him? Assuming the data in this database is only a subset of all the sales
